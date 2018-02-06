@@ -22,7 +22,9 @@ const blogSchema = mongoose.Schema({
   title : String,
   content : String,
   author : String,
-  lastedit : String
+  lastedit : String,
+  comments : Array,
+  totalComment : Number
 });
 
 /************** 定义模型Model **************/

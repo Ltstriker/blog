@@ -144,7 +144,9 @@ router.post('/api/blog/editBlog', (req, res) => {
         res.send({err: 'not signed'});
       } else {
         var d = new Date();
-        let params = {lastedit: d.toLocaleString()};
+        let params = {
+          lastedit: d.toLocaleString()
+        };
         if(req.body.title!=undefined) {
           params['title'] = req.body.title;
         }
@@ -165,6 +167,8 @@ router.post('/api/blog/editBlog', (req, res) => {
         } else {
           //add
           params['author']=req.body.author;
+          params['comments']=new Array();
+          params['totalComment']= 0;
           let newBlog = new models.Blog(params)
           newBlog.save((err,data)=>{
             if (err) {
@@ -179,6 +183,97 @@ router.post('/api/blog/editBlog', (req, res) => {
   })
 });
 
+router.post('/api/blog/commentAtBlog', (req,res) => {
+  models.User.find({username : req.body.username},
+  (err, data) => {
+    if(err) {
+      res.send({err: 'Something wrong'});
+    } else {
+      if (data.length!=1 || !data[0].signed) {
+        res.send({err: 'user not exist or has not login'})
+      } else {
+        models.Blog.find({_id : req.body.id},
+          (err, blog) => {
+          if (err) {
+            res.send({err: 'Something wrong'});
+          } else {
+            if (blog.length!=1) {
+              res.send({err: 'the blog is not found'})
+            } else {
+              var d = new Date();
+              let params= {
+                comments = {
+                  speaker: req.body.username,
+                  content: req.body.content,
+                  lastedit: d.toLocaleString()
+                },
+                totalComment: blog[0].totalComment
+              }
+
+              if (req.body.commentId== null) {
+                params.tempComment['id']= ++params;
+              } else if (req.body.username !== blog[0].speaker) {
+                res.send({err: 'can not edit others comment'})
+              } else {
+                params.tempComment['id']=blog[0].comments.findIndex((temp) => {
+                  return temp.id == req.body.commentId
+                });
+              }
+
+              models.Blog.update({_id: req.body.id}, params,
+                (err,data) => {
+                  if (err) {
+                    res.send({err: 'Something wrong'})
+                  } else {
+                    res.send(data[0]);
+                  }
+                })
+            }
+          }
+        })
+      }
+    }
+  })
+}),
+
+router.post('/api/blog/deleteComment', (req, res) => {
+  models.User.find({username : req.body.username},
+  (err, data) => {
+    if(err) {
+      res.send({err: 'Something wrong'});
+    } else {
+      if (data.length!=1 || !data[0].signed) {
+        res.send({err: 'user not exist or has not login'})
+      } else {
+        models.Blog.find({_id : req.body.id},
+          (err, blog) => {
+          if (err) {
+            res.send({err: 'Something wrong'});
+          } else {
+            if (blog.length!=1) {
+              res.send({err: 'the blog is not found'})
+            } else {
+              var temp_blogIndex=blog[0].comments.findIndex((temp) => {
+                return temp.id == req.body.commentId
+              });
+              blog[0].comments.splice(temp_blogIndex, 1);
+              models.Blog.update({_id: req.body.id},
+                {comments: blog[0].comments},
+                (err,data) => {
+                  if (err) {
+                    res.send({err: 'Something wrong'})
+                  } else {
+                    res.send(data[0]);
+                  }
+                })
+            }
+          }
+        })
+      }
+    }
+  })
+}),
+
 router.get('/api/main/bloglist', (req, res) => {
   models.Blog.find((err,data) =>{
     if (err) {
@@ -188,5 +283,7 @@ router.get('/api/main/bloglist', (req, res) => {
     }
   });
 });
+
+
 
 module.exports = router;
