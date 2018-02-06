@@ -101,9 +101,9 @@ router.post('/api/blog/getblog', (req, res) => {
   models.Blog.find({_id : req.body.id},
     (err, data) => {
     if (err) {
-      res.send(err);
+      res.send({err: 'the blog is not found'});
     } else {
-      res.send(data);
+      res.send(data[0]);
     }
   })
 });

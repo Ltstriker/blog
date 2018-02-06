@@ -1,5 +1,6 @@
 <template>
 <div id="user">
+  <router-link :to="{ name: 'main', params: {} }" class="main">Main</router-link>
   <span id = "cancel" v-on:click="userClick" v-text="this.getCookie('session')===null?'guest':this.getCookie('session')"></span>
   <span v-if='givelockmsg && mode == 0'>
     <detail v-on:changemode= "changemodeto"></detail>
@@ -72,5 +73,12 @@ export default {
   height: 50px;
   width: 100px;
   background-color: yellow;
+}
+.main{
+  position: absolute;
+  left: 0px;
+  color: white;
+  padding: 5px;
+  text-decoration: none;
 }
 </style>
