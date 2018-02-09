@@ -71,8 +71,6 @@ export default {
           this.state = -1;
         } else {
           this.article=res.body;
-          this.article['comments']=new Array({id: 0,speaker: 'handsome boy',lastedit: '12-12-12',content: '666'});
-          console.log(this.article);
           this.state = 1;
         }
       }).catch((rej) => {
@@ -111,10 +109,11 @@ export default {
         let params = {
           blogId: this.$route.params.id,
           username: this.getCookie('session'),
-          commentId: this.commentId
+          commentId: val
         }
         this.$http.post('/api/blog/deleteComment',params)
         .then((res) => {
+          console.log(res);
           this.getArticle()
         }).catch((rej) => {
           this.getArticle()
@@ -134,6 +133,8 @@ export default {
         this.$http.post('/api/blog/commentAtBlog',params)
         .then((res) => {
           this.getArticle()
+          this.newComment= '',
+          this.commentId= null
         }).catch((rej) => {
           this.getArticle()
         })

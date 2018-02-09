@@ -47,10 +47,10 @@ export default {
         } else {
           this.err = false
           this.msg = {
-            "id": res.body[0].id,
-            "username": res.body[0].username,
-            "email": res.body[0].email,
-            "phone": res.body[0].phone
+            "id": res.body.id,
+            "username": res.body.username,
+            "email": res.body.email,
+            "phone": res.body.phone
           }
           this.$store.commit('updateUserInfo',this.msg)
         }

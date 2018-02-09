@@ -22,7 +22,7 @@ export default {
       if (this.$route.params.state == 1) {
         this.$http.post('/api/blog/getblog',this.$route.params)
         .then((res) => {
-          if(res.body.err == undefined) {
+          if(res.body.err !== undefined) {
             this.state = -1;
           } else {
             this.title=res.body.title;

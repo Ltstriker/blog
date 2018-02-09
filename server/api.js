@@ -3,6 +3,7 @@
 const models = require('./db');
 const express = require('express');
 const router = express.Router();
+const blogInPage = 5;
 
 /************** 创建(create) 读取(get) 更新(update) 删除(delete) **************/
 
@@ -174,7 +175,8 @@ router.post('/api/blog/editBlog', (req, res) => {
             if (err) {
               res.send({err: 'Something wrong'});
             } else {
-              res.send(data[0]);
+              console.log(data);
+              res.send(data);
             }
           });
         }
@@ -192,39 +194,51 @@ router.post('/api/blog/commentAtBlog', (req,res) => {
       if (data.length!=1 || !data[0].signed) {
         res.send({err: 'user not exist or has not login'})
       } else {
-        models.Blog.find({_id : req.body.id},
+        models.Blog.find({_id : req.body.blogId},
           (err, blog) => {
           if (err) {
             res.send({err: 'Something wrong'});
           } else {
-            if (blog.length!=1) {
+            if (blog.length != 1) {
               res.send({err: 'the blog is not found'})
             } else {
               var d = new Date();
               let params= {
-                comments = {
-                  speaker: req.body.username,
-                  content: req.body.content,
-                  lastedit: d.toLocaleString()
-                },
+                comments : blog[0].comments,
                 totalComment: blog[0].totalComment
+              };
+              let newComment = {
+                lastedit: d.toLocaleString(),
+                speaker: req.body.username,
+                content: req.body.comment
               }
 
-              if (req.body.commentId== null) {
-                params.tempComment['id']= ++params;
-              } else if (req.body.username !== blog[0].speaker) {
-                res.send({err: 'can not edit others comment'})
+              console.log(req.body);
+
+              if (req.body.commentId == null) {
+                newComment['id']= ++params.totalComment;
+                params.comments.push(newComment);
               } else {
-                params.tempComment['id']=blog[0].comments.findIndex((temp) => {
+                let temp_blogIndex = params.comments.findIndex((temp) => {
                   return temp.id == req.body.commentId
                 });
+                if (newComment['id'] == -1) {
+                  res.send({err: 'the blog not exist'})
+                } else if (req.body.username !== params.comments[temp_blogIndex].speaker) {
+                  res.send({err: 'can not edit others comment'})
+                } else {
+                  newComment['id']=params.comments[temp_blogIndex].id;
+                  params.comments[temp_blogIndex]=newComment;
+                }
               }
 
-              models.Blog.update({_id: req.body.id}, params,
+
+              models.Blog.update({_id: req.body.blogId}, params,
                 (err,data) => {
                   if (err) {
                     res.send({err: 'Something wrong'})
                   } else {
+                    console.log(data);
                     res.send(data[0]);
                   }
                 })
@@ -245,7 +259,7 @@ router.post('/api/blog/deleteComment', (req, res) => {
       if (data.length!=1 || !data[0].signed) {
         res.send({err: 'user not exist or has not login'})
       } else {
-        models.Blog.find({_id : req.body.id},
+        models.Blog.find({_id : req.body.blogId},
           (err, blog) => {
           if (err) {
             res.send({err: 'Something wrong'});
@@ -256,16 +270,22 @@ router.post('/api/blog/deleteComment', (req, res) => {
               var temp_blogIndex=blog[0].comments.findIndex((temp) => {
                 return temp.id == req.body.commentId
               });
-              blog[0].comments.splice(temp_blogIndex, 1);
-              models.Blog.update({_id: req.body.id},
-                {comments: blog[0].comments},
-                (err,data) => {
-                  if (err) {
-                    res.send({err: 'Something wrong'})
-                  } else {
-                    res.send(data[0]);
-                  }
-                })
+              if(temp_blogIndex == -1) {
+                res.send({err: 'the comment is not exist'})
+              } else if (blog[0].comments[temp_blogIndex].speaker != req.body.username) {
+                res.send('you can not edit others comment');
+              } else {
+                blog[0].comments.splice(temp_blogIndex, 1);
+                models.Blog.update({_id: req.body.blogId},
+                  {comments: blog[0].comments},
+                  (err,data) => {
+                    if (err) {
+                      res.send({err: 'Something wrong'})
+                    } else {
+                      res.send(data[0]);
+                    }
+                  })
+              }
             }
           }
         })
@@ -274,12 +294,16 @@ router.post('/api/blog/deleteComment', (req, res) => {
   })
 }),
 
-router.get('/api/main/bloglist', (req, res) => {
-  models.Blog.find((err,data) =>{
+router.post('/api/main/bloglist', (req, res) => {
+  models.Blog.find({title: new RegExp(req.body.searchString)},(err,data) =>{
     if (err) {
         res.send(err);
     } else {
-        res.send(data);
+      data.sort((a, b) => {
+        return a.lastedit < b.lastedit;
+      });
+      res.send({blog: data.slice((req.body.page - 1) * blogInPage, req.body.page * blogInPage),
+      totalPage: parseInt(data.length/blogInPage) + 1});
     }
   });
 });
