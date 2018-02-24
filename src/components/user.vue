@@ -1,55 +1,59 @@
 <template>
 <div id="user">
   <router-link :to="{ name: 'main', params: {} }" class="main">Main</router-link>
-  <span id = "cancel" v-on:click="userClick" v-text="this.getCookie('session')===null?'guest':this.getCookie('session')"></span>
-  <span v-if='givelockmsg && mode == 0'>
-    <detail v-on:changemode= "changemodeto"></detail>
-  </span>
-  <span v-if='givelockmsg && mode ==1'>
-    <login v-on:changemode= "changemodeto"></login>
-  </span>
-  <span v-if='givelockmsg && mode ==2'>
-    <register v-on:changemode= "changemodeto"></register>
+  <span id = "cancel" v-on:click="userClick"
+    v-text="username">
   </span>
 </div>
 </template>
 
 <script>
-import detail from '@/components/detail'
-import login from '@/components/login'
-import register from '@/components/register'
 
 export default {
   data () {
     return {
-      mode: 1
-    }
-  },
-  props: ['givelockmsg'],
-  components: {detail, login, register},
-  created: function () {
-    if (this.getCookie('session')===null) {
-      this.mode = 1
-    } else {
-      this.mode = 0
+      username: 'guest'
     }
   },
   methods: {
     userClick: function () {
-      this.$emit('lockmsg')
+      if (this.getCookie('session')===null) {
+        this.goToLogin();
+      } else {
+        this.goToDetail();
+      }
     },
-    changemodeto: function (modecode) {
-      this.mode = modecode
-      if (this.mode == 0) {
-        this.mode = 0
-        this.$emit('usermsg', this.getCookie('session')===null?'guest':this.getCookie('session'))
-        this.userClick()
-      }
-      else if (this.mode == 3) {
-        this.delCookie('session')
-        this.$emit('usermsg',this.getCookie('session')===null?'guest':this.getCookie('session'))
-        this.mode = 1
-      }
+    goToDetail: function () {
+      this.$modal.detail().then( res => {
+        this.getUsername();
+      }).catch( rej => {
+        this.getUsername();
+      })
+    },
+    goToLogin: function () {
+      this.$modal.login().then( res => {
+        this.getUsername();
+      }).catch( rej => {
+        if (rej['change']) {
+          this.gotoRegister()
+        }
+        this.getUsername();
+      })
+    },
+    gotoRegister: function () {
+      this.$modal.register().then( res => {
+        //console.log(res)
+        this.getUsername();
+      }).catch( rej => {
+        //console.log(rej)
+        if (rej['change']) {
+          this.goToLogin()
+        }
+        this.getUsername();
+      })
+    },
+    getUsername: function () {
+      this.username = this.getCookie('session')===null?'guest':this.getCookie('session')
     }
   }
 }

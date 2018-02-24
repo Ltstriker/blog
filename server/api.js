@@ -1,32 +1,35 @@
-// 可能是我的node版本问题，不用严格模式使用ES6语法会报错
 "use strict";
 const models = require('./db');
 const express = require('express');
 const router = express.Router();
 const blogInPage = 5;
+const validator = require('../src/assets/js/validator')
 
-/************** 创建(create) 读取(get) 更新(update) 删除(delete) **************/
-
-// 创建账号接口
 router.post('/api/login/trylogin',(req,res) => {
-    var d = new Date();
-    let change = {
-      signed: true,
-      signTime: d.toLocaleString()
-    }
-    models.User.update({username : req.body.username, password : req.body.password},
-      change,
-      (err,data) => {
-        if(err){
-          res.send(err);//res.send
-        } else {
-          if(data.n == 1) {
-            res.send('succeed')
+    let paramsErr = validator.checkLogin(req.body);
+    if (paramsErr.err) {
+      res.send({sign: false, msg: paramsErr});
+    } else {
+      var d = new Date();
+      let change = {
+        signed: true,
+        signTime: d.toLocaleString()
+      }
+      models.User.update({username : req.body.username, password : req.body.password},
+        change,
+        (err,data) => {
+          if(err){
+            res.send(err);//res.send
           } else {
-            res.send('false')
+            if(data.n == 1) {
+              res.send({sign: true, msg: paramsErr});
+            } else {
+              paramsErr['username'] = 'this user is no exist';
+              res.send({sign: false, msg: paramsErr});
+            }
           }
-        }
-    });
+      });
+    }
 });
 
 router.post('/api/detail/trylogout',(req,res) => {
@@ -50,49 +53,89 @@ router.post('/api/detail/trylogout',(req,res) => {
   });
 });
 
-// register
 router.post('/api/register/tryregister',(req,res) => {
+  let paramsErr = validator.checkRegister(req.body);
+  if (paramsErr.err) {
+    res.send({sign: false,msg: paramsErr, error: 'Something wrong happened'});
+  } else {
     models.User.find({username : req.body.username},
       (err,data) => {
         if (err) {
-          res.send(err);
+          res.send({sign: false,msg: paramsErr,error: 'Something wrong happened'});
         } else {
           if (data.length !== 0) {
-            res.send('false')
-          } else {
-            var d = new Date();
-            let newUser = new models.User({
-              id: req.body.id,
-              username: req.body.username,
-              password: req.body.password,
-              email: req.body.email,
-              phone: req.body.phone,
-              signed: true,
-              signTime: d.toLocaleString()
-            });
-
-            newUser.save((err,data)=>{
-              if (err) {
-                res.send(err);
-              } else {
-                res.send('succeed');
-              }
-            });
+            paramsErr['username']='this username has been registered';
           }
         }
+        models.User.find({id : req.body.id},
+          (err, data) => {
+            if (err) {
+              res.send({sign: false,msg: paramsErr, error: 'Something wrong happened'});
+            } else {
+              if (data.length !== 0) {
+                paramsErr['id']='this id has been registered';
+              }
+            }
+            models.User.find({phone : req.body.phone},
+              (err, data) => {
+                if (err) {
+                  res.send({sign: false,msg: paramsErr, error: 'Something wrong happened'});
+                } else {
+                  if (data.length !== 0) {
+                    paramsErr['phone']='this phone has been registered';
+                  }
+                }
+                models.User.find({email : req.body.email},
+                  (err, data) => {
+                    if (err) {
+                      res.send({sign: false,msg: paramsErr, error: 'Something wrong happened'});
+                    } else {
+                      if (data.length !== 0) {
+                        paramsErr['email']='this email has been registered';
+                      }
+                    }
+
+                    for (var item in paramsErr) {
+                      if (item!=='') {
+                        res.send({sign: false, msg: paramsErr, error: 'Something wrong happened'})
+                      }
+                    }
+
+                    var d = new Date();
+                    let newUser = new models.User({
+                      id: req.body.id,
+                      username: req.body.username,
+                      password: req.body.password,
+                      email: req.body.email,
+                      phone: req.body.phone,
+                      signed: true,
+                      signTime: d.toLocaleString()
+                    });
+
+                    newUser.save((err,data)=>{
+                      if (err) {
+                        res.send({sign: false,msg: paramsErr, error: 'Something wrong happened'});
+                      } else {
+                        res.send({sign: true, msg: paramsErr, error: null});
+                      }
+                    });
+                  });
+              });
+          });
     });
+  }
 });
 
 router.post('/api/detail/getuser', (req, res) => {
   models.User.find({username : req.body.username},
     (err, data) => {
     if (err) {
-      res.send(err);
+      res.send({error: 'Something wrong'});
     } else {
       if (data.length != 1 || !data[0].signed) {
-        res.send('error');
+        res.send({error: 'the user is not found'});
       } else {
-        res.send(data[0]);
+        res.send({'error': null, 'data': data[0]});
       }
     }
   })
@@ -102,9 +145,9 @@ router.post('/api/blog/getblog', (req, res) => {
   models.Blog.find({_id : req.body.id},
     (err, data) => {
     if (err) {
-      res.send({err: 'the blog is not found'});
+      res.send({error: 'the blog is not found'});
     } else {
-      res.send(data[0]);
+      res.send({'error': null, 'data': data[0]});
     }
   })
 });
@@ -113,20 +156,21 @@ router.post('/api/blog/deleteBlog', (req, res) => {
   models.User.find({username : req.body.username},
     (err, data) => {
     if (err) {
-      res.send(err);
+      res.send({error: 'Something wrong'});
     } else {
       if (data.length != 1 || !data[0].signed) {
-        res.send('error');
+        res.send({error: 'you can not edit others blog'});
       } else {
         models.Blog.remove({_id: req.body.id},
         (err,data) => {
           if (err) {
-            res.send(err);
+            res.send({error: 'Something wrong happened'});
           } else {
-            if (data.length != 1) {
-              res.send('error');
+            console.log(data);
+            if (data.n != 1) {
+              res.send({error: 'did not find the blog'});
             } else {
-              res.send(data[0])
+              res.send({error: null})
             }
           }
         })
@@ -139,10 +183,10 @@ router.post('/api/blog/editBlog', (req, res) => {
   models.User.find({username : req.body.author},
     (err, data) => {
     if (err) {
-      res.send(err);
+      res.send({error: 'Something wrong'});
     } else {
       if (data.length != 1 || !data[0].signed) {
-        res.send({err: 'not signed'});
+        res.send({error: 'not signed'});
       } else {
         var d = new Date();
         let params = {
@@ -160,9 +204,9 @@ router.post('/api/blog/editBlog', (req, res) => {
           models.Blog.update({_id: req.body.id, author: req.body.author}, params,
             (err, data) => {
               if (err) {
-                res.send({err: 'Something wrong'});
+                res.send({error: 'Something wrong'});
               } else {
-                res.send(data[0]);
+                res.send({error: null, data:data[0]});
               }
             })
         } else {
@@ -173,10 +217,9 @@ router.post('/api/blog/editBlog', (req, res) => {
           let newBlog = new models.Blog(params)
           newBlog.save((err,data)=>{
             if (err) {
-              res.send({err: 'Something wrong'});
+              res.send({error: 'Something wrong'});
             } else {
-              console.log(data);
-              res.send(data);
+              res.send({error: null, 'data':data});
             }
           });
         }
@@ -189,18 +232,18 @@ router.post('/api/blog/commentAtBlog', (req,res) => {
   models.User.find({username : req.body.username},
   (err, data) => {
     if(err) {
-      res.send({err: 'Something wrong'});
+      res.send({error: 'Something wrong'});
     } else {
       if (data.length!=1 || !data[0].signed) {
-        res.send({err: 'user not exist or has not login'})
+        res.send({error: 'user not exist or has not login'})
       } else {
         models.Blog.find({_id : req.body.blogId},
           (err, blog) => {
           if (err) {
-            res.send({err: 'Something wrong'});
+            res.send({error: 'Something wrong'});
           } else {
             if (blog.length != 1) {
-              res.send({err: 'the blog is not found'})
+              res.send({error: 'the blog is not found'})
             } else {
               var d = new Date();
               let params= {
@@ -223,9 +266,9 @@ router.post('/api/blog/commentAtBlog', (req,res) => {
                   return temp.id == req.body.commentId
                 });
                 if (newComment['id'] == -1) {
-                  res.send({err: 'the blog not exist'})
+                  res.send({error: 'the blog not exist'})
                 } else if (req.body.username !== params.comments[temp_blogIndex].speaker) {
-                  res.send({err: 'can not edit others comment'})
+                  res.send({error: 'can not edit others comment'})
                 } else {
                   newComment['id']=params.comments[temp_blogIndex].id;
                   params.comments[temp_blogIndex]=newComment;
@@ -236,10 +279,10 @@ router.post('/api/blog/commentAtBlog', (req,res) => {
               models.Blog.update({_id: req.body.blogId}, params,
                 (err,data) => {
                   if (err) {
-                    res.send({err: 'Something wrong'})
+                    res.send({error: 'Something wrong'})
                   } else {
                     console.log(data);
-                    res.send(data[0]);
+                    res.send({error: null});
                   }
                 })
             }
@@ -254,35 +297,35 @@ router.post('/api/blog/deleteComment', (req, res) => {
   models.User.find({username : req.body.username},
   (err, data) => {
     if(err) {
-      res.send({err: 'Something wrong'});
+      res.send({error: 'Something wrong'});
     } else {
       if (data.length!=1 || !data[0].signed) {
-        res.send({err: 'user not exist or has not login'})
+        res.send({error: 'user not exist or has not login'})
       } else {
         models.Blog.find({_id : req.body.blogId},
           (err, blog) => {
           if (err) {
-            res.send({err: 'Something wrong'});
+            res.send({error: 'Something wrong'});
           } else {
             if (blog.length!=1) {
-              res.send({err: 'the blog is not found'})
+              res.send({error: 'the blog is not found'})
             } else {
               var temp_blogIndex=blog[0].comments.findIndex((temp) => {
                 return temp.id == req.body.commentId
               });
               if(temp_blogIndex == -1) {
-                res.send({err: 'the comment is not exist'})
+                res.send({error: 'the comment is not exist'})
               } else if (blog[0].comments[temp_blogIndex].speaker != req.body.username) {
-                res.send('you can not edit others comment');
+                res.send({error: 'you can not edit others comment'})
               } else {
                 blog[0].comments.splice(temp_blogIndex, 1);
                 models.Blog.update({_id: req.body.blogId},
                   {comments: blog[0].comments},
                   (err,data) => {
                     if (err) {
-                      res.send({err: 'Something wrong'})
+                      res.send({error: 'Something wrong'})
                     } else {
-                      res.send(data[0]);
+                      res.send({error: null});
                     }
                   })
               }
@@ -297,13 +340,14 @@ router.post('/api/blog/deleteComment', (req, res) => {
 router.post('/api/main/bloglist', (req, res) => {
   models.Blog.find({title: new RegExp(req.body.searchString)},(err,data) =>{
     if (err) {
-        res.send(err);
+        res.send({error: 'Something wrong'});
     } else {
       data.sort((a, b) => {
         return a.lastedit < b.lastedit;
       });
-      res.send({blog: data.slice((req.body.page - 1) * blogInPage, req.body.page * blogInPage),
-      totalPage: parseInt(data.length/blogInPage) + 1});
+      console.log(data.length/blogInPage+0.5);
+      res.send({error: null,blog: data.slice((req.body.page - 1) * blogInPage, req.body.page * blogInPage),
+      totalPage: Math.ceil(data.length/blogInPage)});
     }
   });
 });

@@ -84,8 +84,10 @@ export default {
       }
       this.$http.post('/api/blog/deleteBlog', params)
       .then((res)=> {
+        this.showError(res);
         this.$router.push('/')
       }).catch((rej) => {
+        this.showError(rej);
         this.$router.push('/')
       })
     },
@@ -113,17 +115,31 @@ export default {
         }
         this.$http.post('/api/blog/deleteComment',params)
         .then((res) => {
-          console.log(res);
+          this.showError(res);
           this.getArticle()
         }).catch((rej) => {
+          this.showError(rej);
           this.getArticle()
         })
       }
     },
     finish: function () {
       if(!this.getCookie('session')) {
-        //ask for login
+        this.$modal.confirm({
+          'title': 'error',
+          'content': 'you have not login.If you want to continue please login at first',
+          'ok': 'login',
+          'cancel': 'cancel'
+          }).then( res => {
+            this.goToLogin()
+          }).catch( rej => {
+          //
+          })
       } else {
+        if (this.newComment == '') {
+          this.showError({body: {error: 'comment should not be empty'}})
+          return;
+        }
         let params = {
           blogId: this.$route.params.id,
           username: this.getCookie('session'),
@@ -132,11 +148,42 @@ export default {
         }
         this.$http.post('/api/blog/commentAtBlog',params)
         .then((res) => {
+          this.showError(res);
           this.getArticle()
           this.newComment= '',
           this.commentId= null
         }).catch((rej) => {
+          this.showError(rej);
           this.getArticle()
+        })
+      }
+    },
+    goToLogin: function () {
+      this.$modal.login().then( res => {
+        //
+      }).catch( rej => {
+        if (rej['change']) {
+          this.gotoRegister()
+        }
+        //
+      })
+    },
+    gotoRegister: function () {
+      this.$modal.register().then( res => {
+        //this.getUsername();
+      }).catch( rej => {
+        if (rej['change']) {
+          this.goToLogin()
+        }
+        //this.getUsername();
+      })
+    },
+    showError: function (res) {
+      if (res.body['error']!==null) {
+        this.$modal.confirm({'title': 'error', 'content': res.body['error']}).then( res => {
+          //
+        }).catch( rej => {
+          //
         })
       }
     }

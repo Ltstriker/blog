@@ -22,22 +22,33 @@ export default {
       if (this.$route.params.state == 1) {
         this.$http.post('/api/blog/getblog',this.$route.params)
         .then((res) => {
-          if(res.body.err !== undefined) {
+          this.showError(res);
+          if(res.body.error !== undefined) {
             this.state = -1;
           } else {
-            this.title=res.body.title;
+            this.title = res.body.title;
             this.username = res.body.author;
             this.content= res.body.content;
             this.state = 1;
           }
         }).catch((rej) => {
+          this.showError(rej);
           this.state = -1;
         })
       } else if(this.$route.params.state != 0){
         this.$router.go(-1);
       } else {
         if(this.getCookie('session')===null) {
-          //提示未登录
+          this.$modal.confirm({
+            'title': 'error',
+            'content': 'you have not login.If you want to continue please login at first',
+            'ok': 'login',
+            'cancel': 'cancel'
+            }).then( res => {
+              this.goToLogin()
+            }).catch( rej => {
+            //
+            })
         } else {
           this.username = this.getCookie('session')
         }
@@ -46,6 +57,13 @@ export default {
     },
     methods: {
       finish: function () {
+        if(this.title=='') {
+          this.showError({body: {error: 'title should not be empty'}})
+          return;
+        } else if (this.content == '') {
+          this.showError({body: {error: 'content should not be empty'}})
+          return;
+        }
         this.$http.post('/api/blog/editBlog', {
           id: this.$route.params.id,
           title: this.title,
@@ -53,17 +71,49 @@ export default {
           author: this.username,
           state: this.state})
         .then((res => {
+          this.showError(res);
           if (this.state == 1) {
             this.$router.push('/blog/'+ this.$route.params.id)
           } else {
-            this.$router.push('/blog/'+ res.body._id)
+            this.$router.push('/blog/'+ res.body.data._id)
           }
         })).catch((rej) => {
+          this.showError(rej);
           this.$router.push('/')
         })
       },
       goBack: function () {
         this.$router.go(-1);
+      },
+      goToLogin: function () {
+        this.$modal.login().then( res => {
+          //
+        }).catch( rej => {
+          if (rej['change']) {
+            this.gotoRegister()
+          }
+          //
+        })
+      },
+      gotoRegister: function () {
+        this.$modal.register().then( res => {
+          //this.getUsername();
+        }).catch( rej => {
+          if (rej['change']) {
+            this.goToLogin()
+          }
+          //this.getUsername();
+        })
+      },
+      showError: function (res) {
+        console.log(res.body);
+        if (res.body['error']!==null) {
+          this.$modal.confirm({'title': 'error', 'content': res.body['error']}).then( res => {
+            //
+          }).catch( rej => {
+            //
+          })
+        }
       }
     }
 }

@@ -5,31 +5,28 @@ import Vuex from 'vuex'
 import App from './App'
 import router from './router'
 import VueResource from 'vue-resource'
+import Modal from 'vuejs-modal'
+
+//模板：
+import confirm from './components/confirm.vue'
+import detail from './components/detail'
+import login from './components/login'
+import register from './components/register'
+
+Vue.use(Modal, {
+     modals: {
+         confirm, //消息提示
+         login,
+         register,
+         detail
+     }  //你的modals，它是个对象
+})
 
 Vue.use(VueResource)
 
 Vue.use(Vuex)
 
 Vue.config.productionTip = false
-
-const store = new Vuex.Store({
-  state: {
-    domain:'', //http://test.example.com  保存后台请求的地址，修改时方便（比方说从测试服改成正式服域名）
-    userInfo: { //保存用户信息
-      id: '',
-      username: 'guest',
-      email: '',
-      phone: ''
-    }
-  },
-  mutations: {
-    //更新用户信息
-    updateUserInfo(state, newUserInfo) {
-      state.userInfo = newUserInfo;
-    }
-  }
-})
-
 
 Vue.prototype.setCookie = (c_name, value, expiredays) => {
   var exdate = new Date();　　　　
@@ -59,7 +56,6 @@ Vue.prototype.delCookie =(name) => {
 new Vue({
   el: '#app',
   router,
-  store,
   components: { App },
   template: '<App/>'
 })

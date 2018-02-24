@@ -51,16 +51,29 @@ export default {
   },
   methods: {
     newBlog: function () {
-      this.$router.push('/editblog/0/0')
+      if(this.getCookie('session')===null) {
+        this.$modal.confirm({
+          'title': 'error',
+          'content': 'you have not login.If you want to continue please login at first',
+          'ok': 'login',
+          'cancel': 'cancel'
+          }).then( res => {
+            this.goToLogin()
+          }).catch( rej => {
+          //
+          })
+      } else {
+        this.$router.push('/editblog/0/0')
+      }
     },
     getBlogList: function () {
       this.$http.post('/api/main/bloglist', {searchString: this.limit,page: this.page})
       .then((res) => {
-        console.log(res.body);
+        this.showError(res);
         this.content = res.body.blog;
         this.totalPage = res.body.totalPage;
       }).catch((rej) => {
-        console.log(rej)
+        this.showError(rej)
       })
     },
     changePage: function (val) {
@@ -70,6 +83,16 @@ export default {
         }
       } else if (val + this.page <= this.totalPage && val + this.page > 0) {
         this.page +=val
+      }
+    },
+    showError: function (res) {
+      console.log(res);
+      if (res.body['error']!==null) {
+        this.$modal.confirm({'title': 'error', 'content': res.body['error']}).then( res => {
+          //
+        }).catch( rej => {
+          //
+        })
       }
     }
   }
