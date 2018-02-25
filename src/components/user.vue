@@ -8,12 +8,18 @@
 </template>
 
 <script>
+import { EventBus } from '../assets/js/event-bus.js';
 
 export default {
   data () {
     return {
-      username: 'guest'
+      username: ''
     }
+  },
+  created:function () {
+    this.username = this.getCookie('session')===null?'guest':this.getCookie('session');
+    EventBus.$on('set', (val)=>{this.username = val});
+    EventBus.$on('reset', ()=>{this.username = 'guest'});
   },
   methods: {
     userClick: function () {
@@ -25,35 +31,24 @@ export default {
     },
     goToDetail: function () {
       this.$modal.detail().then( res => {
-        this.getUsername();
       }).catch( rej => {
-        this.getUsername();
       })
     },
     goToLogin: function () {
       this.$modal.login().then( res => {
-        this.getUsername();
       }).catch( rej => {
         if (rej['change']) {
           this.gotoRegister()
         }
-        this.getUsername();
       })
     },
     gotoRegister: function () {
       this.$modal.register().then( res => {
-        //console.log(res)
-        this.getUsername();
       }).catch( rej => {
-        //console.log(rej)
         if (rej['change']) {
           this.goToLogin()
         }
-        this.getUsername();
       })
-    },
-    getUsername: function () {
-      this.username = this.getCookie('session')===null?'guest':this.getCookie('session')
     }
   }
 }

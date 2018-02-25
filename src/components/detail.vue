@@ -49,15 +49,15 @@ export default {
     if (this.getCookie('session')){
       this.$http.post('/api/detail/getuser', {username: this.getCookie('session')})
       .then((res) => {
-        if(res.body === undefined || res.body.length === 0){
+        if(res.body.data === undefined){
           this.err = true
         } else {
           this.err = false
           this.msg = {
-            "id": res.body.id,
-            "username": res.body.username,
-            "email": res.body.email,
-            "phone": res.body.phone
+            "id": res.body.data.id,
+            "username": res.body.data.username,
+            "email": res.body.data.email,
+            "phone": res.body.data.phone
           }
         }
       }).catch((rej) => {

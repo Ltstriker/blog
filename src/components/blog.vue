@@ -4,7 +4,7 @@
     <div class="title">
       {{article.title}}
     </div>
-    <div v-show='getRight' id="operator">
+    <div v-show="this.getCookie('session') === article.author" id="operator">
       <span class="edit" v-on:click='edit'>edit</span>
       <span class="delete" v-on:click='del'>delete</span>
     </div>
@@ -22,7 +22,7 @@
     </div>
   </div>
   <div class="commentStyle" v-for='item in article.comments':key='item.id'>
-    <div v-if='getRightForComment' class="comment-operator">
+    <div v-if='username==item.speaker' class="comment-operator">
       <span v-on:click='editComment(item.id,item.content)'>edit</span>
       <span v-on:click='deleteComment(item.id)'>delete</span>
     </div>
@@ -38,9 +38,12 @@
 </template>
 
 <script>
+import { EventBus } from '../assets/js/event-bus.js';
+
 export default {
   data () {
     return {
+      username: '',
       article: {},
       state: 0,
       newComment: '',
@@ -48,29 +51,29 @@ export default {
     }
   },
   created: function () {
-    this.getArticle()
+    this.getArticle();
+    this.username = this.getCookie('session')===null?'guest':this.getCookie('session');
+    EventBus.$on('set', (val)=>{this.username = val});
+    EventBus.$on('reset', ()=>{this.username = 'guest'});
     },
   computed: {
     getRight: function () {
       if(this.article!=={} && !!this.article.author
-        &&this.article.author === this.getCookie('session')) {
+        &&this.article.author === this.username) {
         return true
       } else {
         return false
       }
     },
-    getRightForComment: function () {
-      return true;
-    }
   },
   methods: {
     getArticle: function () {
       this.$http.post('/api/blog/getblog',this.$route.params)
       .then((res) => {
-        if(res.body.err !== undefined) {
+        if(res.body.error !== null) {
           this.state = -1;
         } else {
-          this.article=res.body;
+          this.article=res.body.data;
           this.state = 1;
         }
       }).catch((rej) => {

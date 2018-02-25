@@ -56,6 +56,12 @@ export default {
   },
   methods: {
     register: function () {
+      if (this.paramsErr.id!==''||this.paramsErr.username!==''||
+          this.paramsErr.password!==''||
+          this.msg.password!==this.msg.passwordrepeat||
+          this.paramsErr.email!==''||this.paramsErr.phone!=='') {
+        return;
+      }
       let params = {
         id: this.msg.id,
         username: this.msg.username,
@@ -72,7 +78,6 @@ export default {
           this.$emit('$ok', this.$el,{err: null, change: false})
         }
       }).catch((rej) => {
-        console.log('reject to register');
         this.$emit('$ok', this.$el,{err: 'err', change: false})
       })
     },

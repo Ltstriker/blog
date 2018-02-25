@@ -13,6 +13,8 @@ import detail from './components/detail'
 import login from './components/login'
 import register from './components/register'
 
+import { EventBus } from './assets/js/event-bus.js';
+
 Vue.use(Modal, {
      modals: {
          confirm, //消息提示
@@ -29,6 +31,7 @@ Vue.use(Vuex)
 Vue.config.productionTip = false
 
 Vue.prototype.setCookie = (c_name, value, expiredays) => {
+  EventBus.$emit('set', value);
   var exdate = new Date();　　　　
   exdate.setDate(exdate.getDate() + expiredays);　　　　
   document.cookie = c_name + "=" + value + ((expiredays == null) ? "" : ";expires=" + exdate.toGMTString());
@@ -44,13 +47,13 @@ function getCookie(name) {
 Vue.prototype.getCookie = getCookie;
 
 Vue.prototype.delCookie =(name) => {
+    EventBus.$emit('reset');
     var exp = new Date();
     exp.setTime(exp.getTime() - 1);
     var cval = getCookie(name);
     if (cval != null)
       document.cookie = name + "=" + cval + ";expires=" + exp.toGMTString();
 }
-
 
 /* eslint-disable no-new */
 new Vue({

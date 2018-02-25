@@ -50,7 +50,7 @@ export default {
           this.setCookie('session',this.msg.username, expireDays);
           this.$emit('$ok', this.$el,{err: null, change: false})
         } else {
-          this.paramsErr.err = 'user not exist or password is error';
+          this.paramsErr.err = res.body.error;
         }
       })
       .catch((reject) => {

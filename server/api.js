@@ -3,7 +3,10 @@ const models = require('./db');
 const express = require('express');
 const router = express.Router();
 const blogInPage = 5;
-const validator = require('../src/assets/js/validator')
+const validator = require('../src/assets/js/validator');
+
+const var bcrypt = require('bcryptjs');
+const salt = bcrypt.genSaltSync(13);
 
 router.post('/api/login/trylogin',(req,res) => {
     let paramsErr = validator.checkLogin(req.body);
@@ -15,17 +18,26 @@ router.post('/api/login/trylogin',(req,res) => {
         signed: true,
         signTime: d.toLocaleString()
       }
-      models.User.update({username : req.body.username, password : req.body.password},
-        change,
+      models.User.find({username : req.body.username},
         (err,data) => {
           if(err){
-            res.send(err);//res.send
+            res.send({sign: false, msg: 'Something wrong happened,please retry.'});//res.send
           } else {
-            if(data.n == 1) {
-              res.send({sign: true, msg: paramsErr});
+            if(data.length !== 1) {
+              res.send({sign: false, msg: 'this user is no exist'});
             } else {
-              paramsErr['username'] = 'this user is no exist';
-              res.send({sign: false, msg: paramsErr});
+              if (bcrypt.compareSync(req.body.password, data[0].password)) {
+                models.User.update({username : req.body.username}, change
+                (err, data) => {
+                  if (err) {
+                    res.send({sign: true, msg: 'Something wrong,but not a big problem'});
+                  } else {
+                    res.send({sign: true, msg: ''});
+                  }
+                })
+              } else {
+                res.send({sign: false, msg: 'password is wrong'});
+              }
             }
           }
       });
@@ -105,7 +117,7 @@ router.post('/api/register/tryregister',(req,res) => {
                     let newUser = new models.User({
                       id: req.body.id,
                       username: req.body.username,
-                      password: req.body.password,
+                      password: bcrypt.hashSync(req.body.password, salt),
                       email: req.body.email,
                       phone: req.body.phone,
                       signed: true,
@@ -135,7 +147,13 @@ router.post('/api/detail/getuser', (req, res) => {
       if (data.length != 1 || !data[0].signed) {
         res.send({error: 'the user is not found'});
       } else {
-        res.send({'error': null, 'data': data[0]});
+        let params= {
+          id: data[0].id,
+          username: data[0].username,
+          email: data[0].email,
+          phone: data[0].phone
+        }
+        res.send({'error': null, 'data': params});
       }
     }
   })
