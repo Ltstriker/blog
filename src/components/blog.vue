@@ -4,14 +4,22 @@
     <div class="title">
       {{article.title}}
     </div>
-    <div v-show="this.getCookie('session') === article.author" id="operator">
-      <span class="edit" v-on:click='edit'>edit</span>
-      <span class="delete" v-on:click='del'>delete</span>
+    <div class="Tips" v-if='article.hide && username === article.author'>The blog has been hidden</div>
+    <div v-if="username === article.author || username === 'admin'" class="operator">
+      <span class="edit" v-if="username === article.author" v-on:click='edit'>edit</span>
+      <span class="delete" v-if="username === article.author" v-on:click='del'>delete</span>
+      <span class='hide' v-if='username === "admin"' v-on:click='changeHideForBlog'>
+        <span v-if='article.hide'>show</span>
+        <span v-else>hide</span>
+      </span>
     </div>
     <div class="author">
       {{article.author}}
     </div>
-    <div class="content">
+    <div class="hideContent" v-if='article.hide && username !== article.author && username !== "admin"'>
+      The blog has been hidden
+    </div>
+    <div class="content" v-else>
       {{article.content}}
     </div>
     <div class="lastedit">
@@ -22,12 +30,21 @@
     </div>
   </div>
   <div class="commentStyle" v-for='item in article.comments':key='item.id'>
-    <div v-if='username==item.speaker' class="comment-operator">
-      <span v-on:click='editComment(item.id,item.content)'>edit</span>
-      <span v-on:click='deleteComment(item.id)'>delete</span>
+    <div v-if='username === item.speaker || username === "admin"' class="comment-operator">
+      <span v-if='username === item.speaker' v-on:click='editComment(item.id,item.content)'>edit</span>
+      <span v-if='username === item.speaker' v-on:click='deleteComment(item.id)'>delete</span>
+      <span v-if='username === "admin"' v-on:click='changeHideForComment(item.id)'>
+        <span v-if='item.hide'>show</span>
+        <span v-else>hide</span>
+      </span>
     </div>
     <div class="commenter">{{item.speaker}}</div>
-    <div class="commentContent">{{item.content}}</div>
+    <div class="hideComment" v-if='item.hide && username !== "admin"'>
+      The comment has been hidden
+    </div>
+    <div class="commentContent" v-if='item.hide == false
+      || username === item.speaker
+      || username === "admin"'>{{item.content}}</div>
     <div class="commentTime">{{item.lastedit}}</div>
   </div>
   <div id='reply-box'>
@@ -51,27 +68,29 @@ export default {
     }
   },
   created: function () {
-    this.getArticle();
     this.username = this.getCookie('session')===null?'guest':this.getCookie('session');
-    EventBus.$on('set', (val)=>{this.username = val});
-    EventBus.$on('reset', ()=>{this.username = 'guest'});
-    },
-  computed: {
-    getRight: function () {
-      if(this.article!=={} && !!this.article.author
-        &&this.article.author === this.username) {
-        return true
-      } else {
-        return false
+    this.getArticle();
+    EventBus.$on('set', (val)=>{
+      this.username = val;
+      if (this.username === this.article.author || this.username === 'admin') {
+        this.getArticle()
       }
-    },
+    });
+    EventBus.$on('reset', ()=>{
+      this.username = 'guest';
+    });
+  },
+  beforeDestory: function () {
+    EventBus.$off('set');
+    EventBus.$off('reset');
   },
   methods: {
     getArticle: function () {
-      this.$http.post('/api/blog/getblog',this.$route.params)
+      this.$http.post('/api/blog/getblog',{id: this.$route.params.id, username: this.username})
       .then((res) => {
         if(res.body.error !== null) {
-          this.state = -1;
+          this.showError(res);
+          this.$router.go(-1);
         } else {
           this.article=res.body.data;
           this.state = 1;
@@ -83,7 +102,7 @@ export default {
     del: function () {
       let params = {
         id: this.$route.params.id,
-        username: this.getCookie('session')
+        username: this.username
       }
       this.$http.post('/api/blog/deleteBlog', params)
       .then((res)=> {
@@ -97,6 +116,20 @@ export default {
     edit: function () {
       this.$router.push('/editblog/'+ this.$route.params.id+'/'+this.state.toString())
     },
+    changeHideForBlog: function () {
+      let params = {
+        id: this.$route.params.id,
+        username: this.username
+      }
+      this.$http.post('/api/blog/hideBlog', params)
+      .then((res)=> {
+        this.showError(res);
+        this.getArticle()
+      }).catch((rej) => {
+        this.showError(rej);
+        this.getArticle()
+      })
+    },
     goToReply: function () {
       this.commentId = null
       this.newComment = ''
@@ -109,7 +142,16 @@ export default {
     },
     deleteComment: function (val) {
       if(!this.getCookie('session')) {
-        //ask for login
+        this.$modal.confirm({
+          'title': 'error',
+          'content': 'you have not login.If you want to continue please login at first',
+          'ok': 'login',
+          'cancel': 'cancel'
+          }).then( res => {
+            this.goToLogin()
+          }).catch( rej => {
+          //
+          })
       } else {
         let params = {
           blogId: this.$route.params.id,
@@ -117,6 +159,35 @@ export default {
           commentId: val
         }
         this.$http.post('/api/blog/deleteComment',params)
+        .then((res) => {
+          this.showError(res);
+          this.getArticle()
+        }).catch((rej) => {
+          this.showError(rej);
+          this.getArticle()
+        })
+      }
+    },
+    changeHideForComment: function (val) {
+      if(!this.getCookie('session')) {
+        this.$modal.confirm({
+          'title': 'error',
+          'content': 'you have not login.If you want to continue please login at first',
+          'ok': 'login',
+          'cancel': 'cancel'
+          }).then( res => {
+            this.goToLogin()
+          }).catch( rej => {
+            //
+          })
+      } else {
+        let params = {
+          changeHideState: true,
+          blogId: this.$route.params.id,
+          username: this.getCookie('session'),
+          commentId: val
+        }
+        this.$http.post('/api/blog/commentAtBlog',params)
         .then((res) => {
           this.showError(res);
           this.getArticle()
@@ -144,6 +215,7 @@ export default {
           return;
         }
         let params = {
+          changeHideState: false,
           blogId: this.$route.params.id,
           username: this.getCookie('session'),
           commentId: this.commentId,
@@ -204,6 +276,9 @@ export default {
 .title{
   font-size: 32pt;
 }
+.Tips {
+  color: red;
+}
 .author{
   text-align: right;
   padding-right: 20px;
@@ -215,6 +290,14 @@ export default {
   text-align: left;
   word-wrap:break-word;
   word-break:break-all;
+}
+
+.hideContent {
+  width: 464px;
+  padding: 18px;
+  font-size: 16pt;
+  text-align: left;
+  color: red;
 }
 .lastedit{
   text-align: right;
@@ -229,10 +312,18 @@ export default {
   text-align: left;
 }
 
+.operator span:hover {
+  cursor: pointer;
+}
+
 .comment-operator{
   position: absolute;
   top: 2px;
   right: 10px;
+}
+
+.comment-operator span:hover {
+  cursor: pointer;
 }
 
 .commenter{
@@ -252,6 +343,16 @@ export default {
   text-align: left;
   word-wrap:break-word;
   word-break:break-all;
+}
+
+.hideComment {
+  width: 464px;
+  padding-left: 18px;
+  font-size: 12pt;
+  text-align: left;
+  word-wrap:break-word;
+  word-break:break-all;
+  color: red;
 }
 
 .goToReply{

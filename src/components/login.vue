@@ -38,10 +38,19 @@ export default {
   },
   methods: {
     login () {
+      if (this.msg.username==='') {
+        this.paramsErr.err = 'username should not be empty';
+        return;
+      } else if (this.msg.password === '') {
+        this.paramsErr.err = 'password should not be empty'
+        return;
+      }
+
       let params = {
         username: this.msg.username,
         password: this.msg.password
       }
+
       this.$http.post('/api/login/trylogin', params)
       .then((res) => {
         if(res.body.sign) {
@@ -50,12 +59,10 @@ export default {
           this.setCookie('session',this.msg.username, expireDays);
           this.$emit('$ok', this.$el,{err: null, change: false})
         } else {
-          this.paramsErr.err = res.body.error;
+          this.paramsErr.err = res.body.msg;
         }
       })
       .catch((reject) => {
-        console.log('r');
-        console.log(reject);
         this.$emit('$ok', this.$el,{err: 'err', change: false})
       })
     },

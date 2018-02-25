@@ -19,6 +19,7 @@ const userSchema = mongoose.Schema({
 });
 
 const blogSchema = mongoose.Schema({
+  hide : Boolean,
   title : String,
   content : String,
   author : String,

@@ -85,8 +85,23 @@ export default {
         this.page +=val
       }
     },
+    goToLogin: function () {
+      this.$modal.login().then( res => {
+      }).catch( rej => {
+        if (rej['change']) {
+          this.gotoRegister()
+        }
+      })
+    },
+    gotoRegister: function () {
+      this.$modal.register().then( res => {
+      }).catch( rej => {
+        if (rej['change']) {
+          this.goToLogin()
+        }
+      })
+    },
     showError: function (res) {
-      console.log(res);
       if (res.body['error']!==null) {
         this.$modal.confirm({'title': 'error', 'content': res.body['error']}).then( res => {
           //
