@@ -115,6 +115,7 @@ router.post('/api/register/tryregister',(req,res) => {
 
                             if (errSign) {
                               res.send({sign: false, msg: paramsErr, error: 'Something wrong happened'})
+                              return;
                             }
 
                             var d = new Date();
@@ -170,27 +171,31 @@ router.post('/api/detail/getuser', (req, res) => {
 });
 
 router.post('/api/blog/getblog', (req, res) => {
-  models.Blog.find({_id : req.body.id},
-    (err, data) => {
-    if (err) {
-      res.send({error: 'something wrong'});
-    } else {
-      if (data.length == 1) {
-        if(data[0].hide&&req.body.username!=admin&&req.body.username!=data[0].author) {
-          data[0].content = ''
-        }
-
-        for (var item in data[0].comments) {
-          if (item.hide&&req.body.username!=admin&&req.body.username!=data[0].speaker) {
-            item.content= '';
-          }
-        }
-        res.send({'error': null, 'data': data[0]});
+  if(req.body.username==undefined||req.body.username==null) {
+    res.send({error: "something wrong happan,please retry"});
+  } else {
+    models.Blog.find({_id : req.body.id},
+      (err, data) => {
+      if (err) {
+        res.send({error: 'something wrong'});
       } else {
-        res.send({error: 'the blog is not found'});
+        if (data.length == 1) {
+          if(data[0].hide&&req.body.username!=admin&&req.body.username!=data[0].author) {
+            data[0].content = ''
+          }
+
+          for (var item in data[0].comments) {
+            if (item.hide&&req.body.username!=admin&&req.body.username!=data[0].speaker) {
+              item.content= '';
+            }
+          }
+          res.send({'error': null, 'data': data[0]});
+        } else {
+          res.send({error: 'the blog is not found'});
+        }
       }
-    }
-  })
+    })
+  }
 });
 
 router.post('/api/blog/deleteBlog', (req, res) => {
@@ -207,7 +212,6 @@ router.post('/api/blog/deleteBlog', (req, res) => {
           if (err) {
             res.send({error: 'Something wrong happened'});
           } else {
-            console.log(data);
             if (data.n != 1) {
               res.send({error: 'did not find the blog'});
             } else {
@@ -341,7 +345,6 @@ router.post('/api/blog/commentAtBlog', (req,res) => {
                 content: req.body.comment
               }
 
-
               if (req.body.commentId == null) {
                 //new one
                 newComment['id']= ++params.totalComment;
@@ -352,10 +355,12 @@ router.post('/api/blog/commentAtBlog', (req,res) => {
                 let temp_blogIndex = params.comments.findIndex((temp) => {
                   return temp.id == req.body.commentId
                 });
-                if (newComment['id'] == -1) {
-                  res.send({error: 'the blog not exist'})
+                if (temp_blogIndex == -1) {
+                  res.send({error: 'the comment not exist'})
+                  return;
                 } else if (req.body.username!== admin && req.body.username !== params.comments[temp_blogIndex].speaker) {
-                  res.send({error: 'can not edit others comment'})
+                  res.send({error: 'can not edit others comment'});
+                  return;
                 } else {
                   newComment['id']= params.comments[temp_blogIndex].id;
                   newComment['hide']= params.comments[temp_blogIndex].hide;

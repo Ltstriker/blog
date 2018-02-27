@@ -18,17 +18,17 @@ export default {
     }
   },
   created: function () {
-      this.state = this.$route.params.state
+      this.state = this.$route.params.state;
       if (this.$route.params.state == 1) {
-        this.$http.post('/api/blog/getblog',this.$route.params)
+        this.$http.post('/api/blog/getblog',{id: this.$route.params.id, username: this.getCookie('session')})
         .then((res) => {
           this.showError(res);
-          if(res.body.error !== undefined) {
+          if(res.body.error !== null) {
             this.state = -1;
           } else {
-            this.title = res.body.title;
-            this.username = res.body.author;
-            this.content= res.body.content;
+            this.title = res.body.data.title;
+            this.username = res.body.data.author;
+            this.content= res.body.data.content;
             this.state = 1;
           }
         }).catch((rej) => {
@@ -54,6 +54,13 @@ export default {
         }
       }
 
+      var myInput = document.getElementById("myInput");  
+      str = "    ";
+      if(myInput.addEventListener ) {
+          myInput.addEventListener('keydown',this.keyHandler,false);
+      } else if(myInput.attachEvent ) {
+          myInput.attachEvent('onkeydown',this.keyHandler); /* damn IE hack */
+      }
     },
     methods: {
       finish: function () {
@@ -106,7 +113,6 @@ export default {
         })
       },
       showError: function (res) {
-        console.log(res.body);
         if (res.body['error']!==null) {
           this.$modal.confirm({'title': 'error', 'content': res.body['error']}).then( res => {
             //
@@ -121,22 +127,28 @@ export default {
 
 <style lang="css" scoped>
 .editor{
+  background-color: white;
   position:relative;
   margin: 0 auto;
-  width: 500px;
-  border: 2px red solid;
+  width: 60%;
+  border: 1px rgba(0, 0, 0, 0.1) solid;
+  box-shadow: 1px 1px 1px gray;
 }
 
 .editor-title{
-  width: 480px;
+  width: 98%;
   height: 24px;
-  margin: 10px;
+  margin: 1%;
+  font-size: 20pt;
 }
 
 .editor-content
 {
-  width: 480px;
-  height: 500px;
+  width: 98%;
+  height: 550px;
+  font-size: 16pt;
+  word-wrap:break-word;
+  word-break:break-all;
 }
 
 #btnInEdit{

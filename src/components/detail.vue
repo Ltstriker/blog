@@ -62,7 +62,6 @@ export default {
         }
       }).catch((rej) => {
         this.err = false
-        console.log(rej)
       })
     } else {
       this.err = true

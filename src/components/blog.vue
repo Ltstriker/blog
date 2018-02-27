@@ -16,12 +16,13 @@
     <div class="author">
       {{article.author}}
     </div>
+    <hr />
     <div class="hideContent" v-if='article.hide && username !== article.author && username !== "admin"'>
       The blog has been hidden
     </div>
-    <div class="content" v-else>
+    <pre class="content" v-else>
       {{article.content}}
-    </div>
+    </pre>
     <div class="lastedit">
       {{article.lastedit}}
     </div>
@@ -29,27 +30,30 @@
       <span class="goToReply" v-on:click='goToReply'>reply</span>
     </div>
   </div>
-  <div class="commentStyle" v-for='item in article.comments':key='item.id'>
-    <div v-if='username === item.speaker || username === "admin"' class="comment-operator">
-      <span v-if='username === item.speaker' v-on:click='editComment(item.id,item.content)'>edit</span>
-      <span v-if='username === item.speaker' v-on:click='deleteComment(item.id)'>delete</span>
-      <span v-if='username === "admin"' v-on:click='changeHideForComment(item.id)'>
-        <span v-if='item.hide'>show</span>
-        <span v-else>hide</span>
-      </span>
+  <div class="comments-box">
+    <div class="commentStyle" v-for='item in article.comments':key='item.id'>
+      <div v-if='username === item.speaker || username === "admin"' class="comment-operator">
+        <span v-if='username === item.speaker' v-on:click='editComment(item.id,item.content)'>edit</span>
+        <span v-if='username === item.speaker' v-on:click='deleteComment(item.id)'>delete</span>
+        <span v-if='username === "admin"' v-on:click='changeHideForComment(item.id)'>
+          <span v-if='item.hide'>show</span>
+          <span v-else>hide</span>
+        </span>
+      </div>
+      <div class="commenter">{{item.speaker}}</div>
+      <div class="hideComment" v-if='item.hide && username !== "admin"'>
+        The comment has been hidden
+      </div>
+      <pre class="commentContent" v-if='item.hide == false
+        || username === item.speaker
+        || username === "admin"'>{{item.content}}</pre>
+      <div class="commentTime">{{item.lastedit}}</div>
     </div>
-    <div class="commenter">{{item.speaker}}</div>
-    <div class="hideComment" v-if='item.hide && username !== "admin"'>
-      The comment has been hidden
+    <div id='reply-box'>
+      <span class="reply-sign"></span>
+      <textarea class="editor-comment" placeholder="comment" v-model='newComment'/>
+      <button type="submit" id='btnComment' @click="finish">comment</button>
     </div>
-    <div class="commentContent" v-if='item.hide == false
-      || username === item.speaker
-      || username === "admin"'>{{item.content}}</div>
-    <div class="commentTime">{{item.lastedit}}</div>
-  </div>
-  <div id='reply-box'>
-    <textarea class="editor-comment" placeholder="comment" v-model='newComment'/>
-    <button type="submit" id='btnComment' @click="finish">comment</button>
   </div>
 </div>
 </template>
@@ -267,13 +271,21 @@ export default {
 </script>
 
 <style>
+body{
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
 .blog-block{
   position: relative;
+  background-color: white;
   margin: 0 auto;
-  width: 500px;
-  border: 2px red solid;
+  margin-bottom: 20px;
+  width: 60%;
+  border: 1px rgba(0, 0, 0, 0.1) solid;
+  box-shadow: 1px 1px 1px gray;
 }
 .title{
+  font-weight: bolder;
   font-size: 32pt;
 }
 .Tips {
@@ -284,12 +296,15 @@ export default {
   padding-right: 20px;
 }
 .content{
-  width: 464px;
-  padding: 18px;
+  width: 90%;
+  padding-left: 5%;
   font-size: 16pt;
   text-align: left;
+  white-space:pre-wrap;
+  white-space:-moz-pre-wrap;
+  white-space:-pre-wrap;
+  white-space:-o-pre-wrap;
   word-wrap:break-word;
-  word-break:break-all;
 }
 
 .hideContent {
@@ -299,31 +314,49 @@ export default {
   text-align: left;
   color: red;
 }
+
 .lastedit{
   text-align: right;
+  color: gray;
   padding-right: 20px;
 }
 
-.commentStyle{
+.comments-box {
+  background-color: white;
   position: relative;
   margin: 0 auto;
-  border: 2px yellow solid;
-  width: 500px;
   text-align: left;
+  width: 60%;
+  border: 1px rgba(0, 0, 0, 0.1) solid;
+  box-shadow: 1px 1px 1px gray;
+}
+
+.commentStyle{
+  border: 1px rgba(0, 0, 0, 0.1) solid;
+}
+
+.operator span {
+  color: rgba(0, 0, 255, 0.5);
 }
 
 .operator span:hover {
   cursor: pointer;
+  color: rgba(0, 0, 255, 0.8);
 }
 
 .comment-operator{
-  position: absolute;
-  top: 2px;
-  right: 10px;
+  float: right;
+  margin-top: 2px;
+  margin-right: 10px;
+}
+
+.comment-operator span {
+  color: rgba(0, 0, 255, 0.5);
 }
 
 .comment-operator span:hover {
   cursor: pointer;
+  color: rgba(0, 0, 255, 0.8);
 }
 
 .commenter{
@@ -331,13 +364,12 @@ export default {
   padding: 5px;
 }
 .commentTime{
-  width: 490px;
   text-align: right;
   padding-right: 10px;
 }
 
 .commentContent{
-  width: 464px;
+  width: 92%;
   padding-left: 18px;
   font-size: 16pt;
   text-align: left;
@@ -346,7 +378,7 @@ export default {
 }
 
 .hideComment {
-  width: 464px;
+  width: 92%;
   padding-left: 18px;
   font-size: 12pt;
   text-align: left;
@@ -357,35 +389,35 @@ export default {
 
 .goToReply{
   padding: 5px;
-  color: blue;
+  color: rgba(0, 0, 255, 0.5);
 }
 
 .goToReply:hover{
   cursor: pointer;
+  color: rgba(0, 0, 255, 0.8);
 }
 
 #reply-box{
   position: relative;
-  margin: 0 auto;
-  border: 2px black solid;
-  width: 500px;
+  width: 100%;
   text-align: left;
+  border: 1px rgba(0, 0, 0, 0.1) solid;
 }
 
 .editor-comment{
+  position: relative;
+  margin: 0 auto;
   font-size: 16pt;
-  width: 480px;
+  width: 98%;
   height: 120px;
-  margin: 9px;
-  margin-bottom: 0;
+  margin-top: 5px;
+  margin-left: 0.5%;
 }
 
 #btnComment{
   height: 23px;
   width: 92px;
   font-size: 14pt;
-  margin: 5px;
-  margin-top: 3px;
-  margin-left: 395px;
+  margin: 10px;
 }
 </style>

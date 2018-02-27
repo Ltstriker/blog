@@ -1,6 +1,6 @@
 <template>
 <div id="user">
-  <router-link :to="{ name: 'main', params: {} }" class="main">Main</router-link>
+  <router-link :to="{ name: 'main', params: {} }" class="main"></router-link>
   <span id = "cancel" v-on:click="userClick"
     v-text="username">
   </span>
@@ -63,21 +63,39 @@ export default {
   height: 32px;
   font-size: 18pt;
   width: 100%;
-  background: blue;
+  background: white;
   text-align: right;
+  box-shadow: 5px 5px 2.5px #888888,
+              16px 16px 16px blue inset,
+              -16px -16px 16px blue inset;
 }
 #cancel{
   z-index: 53;
+  margin-right: 10px;
+  float: right;
   overflow: visible;
-  height: 50px;
-  width: 100px;
-  background-color: yellow;
+  background-color: inherit;
+  border-radius: 5px;
+  height: 32px;
+  box-shadow: 0px 12px 16px rgba(100,250,255,0.5) inset,
+              0px -12px 16px rgba(255, 250, 100,0.5) inset;
 }
+
+#cancel:hover {
+  cursor: pointer;
+}
+
 .main{
   position: absolute;
-  left: 0px;
+  left: 10px;
+  top: 0px;
+  height: 32px;
+  width: 32px;
+  border-radius: 50%;
   color: white;
-  padding: 5px;
+  background-image: url('../assets/img/home.jpg');
+  background-size: 230%;
+  background-position: -10px -22px;
   text-decoration: none;
 }
 </style>
