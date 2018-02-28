@@ -1,3 +1,15 @@
+vue习作
+blog
+
+使用vue-cli创建的手脚架，使用express做后端，
+vue全家桶
+vuejs-modal做弹窗
+joi搞表单校验
+bcryptjs加密
+用空vue做EventBus来做全局信息传递
+
+usage：
+
 1.start mongodb  in folder 'data'
 
 2.start server
@@ -9,10 +21,9 @@ node index
 
 administator:(not registered now)
 username: admin
+password: asdasd
 
 /*
-
-Because it was too big to upload (70M >50M),I made the folder 'data' empty.
-So the administrator has not registered,you should use the username 'admin' to register it at the beginning.
-
+做完之后再回头看看，感觉有点崩，session似乎有点问题，冗余代码好像有点多...
+不知道日后还有没有心情改好它
 */

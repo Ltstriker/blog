@@ -53,14 +53,6 @@ export default {
           this.username = this.getCookie('session')
         }
       }
-
-      var myInput = document.getElementById("myInput");  
-      str = "    ";
-      if(myInput.addEventListener ) {
-          myInput.addEventListener('keydown',this.keyHandler,false);
-      } else if(myInput.attachEvent ) {
-          myInput.attachEvent('onkeydown',this.keyHandler); /* damn IE hack */
-      }
     },
     methods: {
       finish: function () {
