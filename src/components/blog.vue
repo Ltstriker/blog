@@ -130,6 +130,7 @@ export default {
         this.showError(res);
         this.getArticle()
       }).catch((rej) => {
+        console.log(rej);
         this.showError(rej);
         this.getArticle()
       })

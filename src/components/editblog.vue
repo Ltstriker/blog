@@ -57,10 +57,10 @@ export default {
     methods: {
       finish: function () {
         if(this.title=='') {
-          this.showError({body: {error: 'title should not be empty'}})
+          this.showError('title should not be empty')
           return;
         } else if (this.content == '') {
-          this.showError({body: {error: 'content should not be empty'}})
+          this.showError('content should not be empty')
           return;
         }
         this.$http.post('/api/blog/editBlog', {
@@ -70,11 +70,14 @@ export default {
           author: this.username,
           state: this.state})
         .then((res => {
-          this.showError(res);
-          if (this.state == 1) {
-            this.$router.push('/blog/'+ this.$route.params.id)
+          if (!res.body.sign) {
+            this.showError(res);
           } else {
-            this.$router.push('/blog/'+ res.body.data._id)
+            if (this.state == 1) {
+              this.$router.push('/blog/'+ this.$route.params.id)
+            } else {
+              this.$router.push('/blog/'+ res.body.msg)
+            }
           }
         })).catch((rej) => {
           this.showError(rej);
@@ -104,14 +107,12 @@ export default {
           //this.getUsername();
         })
       },
-      showError: function (res) {
-        if (res.body['error']!==null) {
-          this.$modal.confirm({'title': 'error', 'content': res.body['error']}).then( res => {
-            //
-          }).catch( rej => {
-            //
-          })
-        }
+      showError: function (msg) {
+        this.$modal.confirm({'title': 'error', 'content': msg}).then( res => {
+          //
+        }).catch( rej => {
+          //
+        })
       }
     }
 }

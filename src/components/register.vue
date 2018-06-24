@@ -71,11 +71,19 @@ export default {
       }
       this.$http.post('/api/register/tryregister', params)
       .then((res) => {
-        this.paramsErr = res.body.msg;
         if(res.body.sign) {
           let expireDays = 1000 * 60 * 60 * 24 * 15;
           this.setCookie('session',this.msg.username, expireDays);
           this.$emit('$ok', this.$el,{err: null, change: false})
+        } else {
+          this.$modal.confirm({
+            'title': 'error',
+            'content': res.body.msg
+            }).then( res => {
+
+            }).catch( rej => {
+            //
+            })
         }
       }).catch((rej) => {
         this.$emit('$ok', this.$el,{err: 'err', change: false})

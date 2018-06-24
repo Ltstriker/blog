@@ -49,13 +49,13 @@ export default {
     if (this.getCookie('session')){
       this.$http.post('/api/detail/getuser', {username: this.getCookie('session')})
       .then((res) => {
-        if(res.body.data === undefined){
+        if(res.body.sign == false){
           this.err = true
         } else {
           this.err = false
           this.msg = {
-            "id": res.body.data.id,
-            "username": res.body.data.username,
+            "id": res.body.data.uid,
+            "username": res.body.data.name,
             "email": res.body.data.email,
             "phone": res.body.data.phone
           }

@@ -1,4 +1,6 @@
-const api = require('./api');
+//const api = require('./api'); //use mongodb
+const api = require('./apiWithMysql');//use mysql
+const errhandler = require('./errHandler');
 const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser')
@@ -9,6 +11,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(api);
 app.use(express.static(path.resolve(__dirname, '../dist')))
+app.use(errhandler);
 
 
 app.get('*', function(req, res) {

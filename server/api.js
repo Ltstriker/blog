@@ -225,6 +225,7 @@ router.post('/api/blog/deleteBlog', (req, res) => {
 });
 
 router.post('/api/blog/hideBlog', (req, res) => {
+  //next({error: "wwww"});
   models.User.find({username : req.body.username},
     (err, data) => {
     if (err) {
@@ -457,7 +458,5 @@ router.post('/api/main/bloglist', (req, res) => {
     }
   });
 });
-
-
 
 module.exports = router;
