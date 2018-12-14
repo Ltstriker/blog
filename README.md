@@ -1,5 +1,4 @@
-vue习作
-blog
+# blog
 
 使用vue-cli创建的手脚架，使用express做后端，
 vue全家桶
@@ -23,10 +22,5 @@ administator:(not registered now)
 username: admin
 password: asdasd
 
-/*
-做完之后再回头看看，感觉有点崩，session似乎有点问题，冗余代码好像有点多...
-不知道日后还有没有心情改好它
-*/
-
-2018-06-21
-数据库刚好要做个数据库项目，刚好可以把mongodb换成mysql，还可以顺便把session也改了。真是棒极了。敬请期待。
+## 当前版本为mysql改到一半  
+可以运行的是mongodb版本版本为ba3f8d0d2449bddb02908a1ab9ceff5582fffad8。
